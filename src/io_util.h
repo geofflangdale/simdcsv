@@ -14,7 +14,7 @@
 // if you must provide a pointer to some data, create it with this function:
 // length is the max. size in bytes of the string
 // caller is responsible to free the memory (free(...))
-char * allocate_padded_buffer(size_t length, size_t padding);
+uint8_t * allocate_padded_buffer(size_t length, size_t padding);
 
 
 // load a file in memory...
@@ -31,6 +31,6 @@ char * allocate_padded_buffer(size_t length, size_t padding);
 //        aligned_free((void*)p.data());
 //        std::cout << "Could not load the file " << filename << std::endl;
 //      }
-std::string_view  get_corpus(const std::string& filename, size_t padding);
+std::basic_string_view<uint8_t>  get_corpus(const std::string& filename, size_t padding);
 
 #endif

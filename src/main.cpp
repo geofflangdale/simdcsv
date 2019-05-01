@@ -196,7 +196,7 @@ int main(int argc, char * argv[]) {
   if (verbose) {
     cout << "[verbose] loading " << filename << endl;
   }
-  std::string_view p;
+  std::basic_string_view<uint8_t> p;
   try {
     p = get_corpus(filename, CSV_PADDING);
   } catch (const std::exception &e) { // caught by reference to base
@@ -221,7 +221,7 @@ int main(int argc, char * argv[]) {
   for (int i = 0; i < iterations; i++) {
     {
       TimingPhase p1(ta, 0);
-      find_indexes(reinterpret_cast<const uint8_t *>(p.data()), p.size(), pcsv);
+      find_indexes(p.data(), p.size(), pcsv);
     }
     {
       TimingPhase p2(ta, 1);
