@@ -137,14 +137,23 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
 #endif
     simd_input in = fill_input(buf+idx);
     uint64_t quote_mask = find_quote_mask(in, prev_iter_inside_quote);
-    uint64_t commas = cmp_mask_against_input(in, ',') & ~quote_mask;
-    uint64_t cr = cmp_mask_against_input(in, 0x0d) & ~quote_mask;
+    uint64_t sep = cmp_mask_against_input(in, ',');
+#ifdef CRLF
+    uint64_t cr = cmp_mask_against_input(in, 0x0d);
     uint64_t cr_adjusted = (cr << 1) | prev_iter_cr_end;
-    uint64_t lf = cmp_mask_against_input(in, 0x0a) & ~quote_mask;
-    uint64_t crlf = lf & cr_adjusted;
+    uint64_t lf = cmp_mask_against_input(in, 0x0a);
+    uint64_t end = lf & cr_adjusted;
     prev_iter_cr_end = cr >> 63;
+#else
+    uint64_t end = cmp_mask_against_input(in, 0x0a);
+#endif
+    // note - a bit of a high-wire act here with quotes
+    // we can't put something inside the quotes with the CR
+    // then outside the quotes with LF so it's OK to "and off"
+    // the quoted bits here. Some other quote convention would
+    // need to be thought about carefully
+    uint64_t field_sep = (end | sep) & ~quote_mask;
 
-    uint64_t field_sep = crlf | commas;
     flatten_bits(base_ptr, base, idx, field_sep);
   }
   pcsv.n_indexes = base;
