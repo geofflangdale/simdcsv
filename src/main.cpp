@@ -136,7 +136,7 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
 #define SIMDCSV_BUFFERSIZE 4
   if(lenminus64 > 64 * SIMDCSV_BUFFERSIZE) {
     uint64_t fields[SIMDCSV_BUFFERSIZE];
-    for (; idx < lenminus64; idx += 64 * SIMDCSV_BUFFERSIZE) {
+    for (; idx < lenminus64 - 64 * SIMDCSV_BUFFERSIZE + 1; idx += 64 * SIMDCSV_BUFFERSIZE) {
       for(size_t b = 0; b < SIMDCSV_BUFFERSIZE; b++){
         size_t internal_idx = 64 * b + idx;
 #ifndef _MSC_VER
