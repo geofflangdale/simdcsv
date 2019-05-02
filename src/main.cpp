@@ -140,7 +140,9 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
 bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
   // does the previous iteration end inside a double-quote pair?
   uint64_t prev_iter_inside_quote = 0ULL;  // either all zeros or all ones
-  //uint64_t prev_iter_cr_end = 0ULL; 
+#ifdef CRLF
+  uint64_t prev_iter_cr_end = 0ULL; 
+#endif
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
   uint32_t *base_ptr = pcsv.indexes;
