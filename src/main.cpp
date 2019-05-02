@@ -7,7 +7,7 @@
 #include "csv_defs.h"
 #include "io_util.h"
 #include "timing.h"
-
+#include "mem_util.h"
 #include "portability.h"
 using namespace std;
 
@@ -167,7 +167,7 @@ int main(int argc, char * argv[]) {
   bool verbose = false;
   bool dump = false;
   int iterations = 10;
-  bool squash_counters = false;
+  bool squash_counters = false; // unused.
 
   while ((c = getopt(argc, argv, "vdi:s")) != -1){
     switch (c) {
@@ -215,6 +215,7 @@ int main(int argc, char * argv[]) {
   evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
   evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
   evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
+  evts.push_back(PERF_COUNT_HW_REF_CPU_CYCLES);
 #endif //__linux__
 
   ParsedCSV pcsv;
@@ -226,22 +227,18 @@ int main(int argc, char * argv[]) {
 
 #ifdef __linux__
   TimingAccumulator ta(2, evts);
-#else
-  double total = 0; // naive accumulator
 #endif // __linux__
+  double total = 0; // naive accumulator
   for (int i = 0; i < iterations; i++) {
-#ifdef __linux__
-      TimingPhase p1(ta, 0);
-#else
       clock_t start = clock(); // brutally portable
+#ifdef __linux__
+      {TimingPhase p1(ta, 0);
 #endif // __linux__
       find_indexes(p.data(), p.size(), pcsv);
-
 #ifdef __linux__
-      TimingPhase p2(ta, 1);
-#else
-       total += clock() - start; // brutally portable 
+      }{TimingPhase p2(ta, 1);} // the scoping business is an instance of C++ extreme programming
 #endif // __linux__
+      total += clock() - start; // brutally portable 
   }
 
   if (dump) {
@@ -254,18 +251,43 @@ int main(int argc, char * argv[]) {
       }
       cout << "\n";
     }
+  } else if(verbose) {
+    cout << "number of indexes found : " << pcsv.n_indexes << endl;
+  }
+  double volume = iterations * p.size();
+  double time_in_s = total / CLOCKS_PER_SEC;
+  if(verbose) {
+    cout << "Total time in (s)          = " << time_in_s << endl;
+    cout << "Number of iterations       = " << volume << endl;
   }
 #ifdef __linux__
-  ta.dump();
-  cout << "Cycles per byte " << (1.0*ta.results[0])/(iterations*p.size()) << "\n";
-#else
-  double volume = iterations*p.size() * iterations;
-  double time_in_s = total / CLOCKS_PER_SEC;
-  cout << " GB/s: " << volume / time_in_s / (1024 * 1024 * 1024) << endl;
+  if(verbose) {
+    cout << "Number of cycles                   = " << ta.results[0] << endl;
+    cout << "Number of cycles per byte          = " << ta.results[0] / volume << endl;
+    cout << "Number of cycles (ref)             = " << ta.results[5] << endl;
+    cout << "Number of cycles (ref) per byte    = " << ta.results[5] / volume << endl;
+    cout << "Number of instructions             = " << ta.results[1] << endl;
+    cout << "Number of instructions per byte    = " << ta.results[1] / volume << endl;
+    cout << "Number of instructions per cycle   = " << double(ta.results[1]) / ta.results[0] << endl;
+    cout << "Number of branch misses            = " << ta.results[2] << endl;
+    cout << "Number of branch misses per byte   = " << ta.results[2] / volume << endl;
+    cout << "Number of cache references         = " << ta.results[3] << endl;
+    cout << "Number of cache references per b.  = " << ta.results[3] / volume << endl;
+    cout << "Number of cache misses             = " << ta.results[4] << endl;
+    cout << "Number of cache misses per byte    = " << ta.results[4] / volume << endl;
+    cout << "CPU freq (effective)               = " << ta.results[0] / time_in_s / (1000 * 1000 * 1000) << endl; 
+    cout << "CPU freq (base)                    = " << ta.results[5] / time_in_s / (1000 * 1000 * 1000) << endl; 
+   } else {
+    ta.dump();
+  }
+  cout << "Cycles per byte " << (1.0*ta.results[0])/volume << "\n";
 #endif
+  cout << " GB/s: " << volume / time_in_s / (1024 * 1024 * 1024) << endl;
   if (verbose) {
     cout << "[verbose] done " << endl;
   }
-  return 0;
+  delete[] pcsv.indexes;
+  aligned_free((void*)p.data());
+  return EXIT_SUCCESS;
 }
 
