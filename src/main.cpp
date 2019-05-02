@@ -124,6 +124,19 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   base = next_base;
 }
 
+//
+// This optimization option might be helpful
+// When it is OFF:
+// $ ./simdcsv ../examples/nfl.csv
+// Cycles per byte 0.694172
+// GB/s: 4.26847
+// When it is ON:
+// $ ./simdcsv ../examples/nfl.csv
+// Cycles per byte 0.55007
+// GB/s: 5.29778
+// Explanation: It slightly reduces cache misses, but that's probably irrelevant,
+// However, it seems to improve drastically the number of instructions per cycle.
+#define SIMDCSV_BUFFERING 
 bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
   // does the previous iteration end inside a double-quote pair?
   uint64_t prev_iter_inside_quote = 0ULL;  // either all zeros or all ones
@@ -132,8 +145,9 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
   size_t idx = 0;
   uint32_t *base_ptr = pcsv.indexes;
   uint32_t base = 0;
+#ifdef SIMDCSV_BUFFERING
   // we do the index decoding in bulk for better pipelining.
-#define SIMDCSV_BUFFERSIZE 4
+#define SIMDCSV_BUFFERSIZE 4 // it seems to be about the sweetspot.
   if(lenminus64 > 64 * SIMDCSV_BUFFERSIZE) {
     uint64_t fields[SIMDCSV_BUFFERSIZE];
     for (; idx < lenminus64 - 64 * SIMDCSV_BUFFERSIZE + 1; idx += 64 * SIMDCSV_BUFFERSIZE) {
@@ -161,8 +175,10 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
         flatten_bits(base_ptr, base, internal_idx, fields[b]);
       }
     }
-    // tail end
-    for (; idx < lenminus64; idx += 64) {
+  }
+  // tail end will be unbuffered
+#endif // SIMDCSV_BUFFERING
+  for (; idx < lenminus64; idx += 64) {
 #ifndef _MSC_VER
       __builtin_prefetch(buf + idx + 128);
 #endif
@@ -186,7 +202,6 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
       uint64_t field_sep = (end | sep) & ~quote_mask;
 
       flatten_bits(base_ptr, base, idx, field_sep);
-    }
   }
 #undef SIMDCSV_BUFFERSIZE
   pcsv.n_indexes = base;
