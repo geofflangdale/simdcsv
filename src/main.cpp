@@ -251,8 +251,10 @@ int main(int argc, char * argv[]) {
       }
       cout << "\n";
     }
-  } else if(verbose) {
-    cout << "number of indexes found : " << pcsv.n_indexes << endl;
+  } 
+  if(verbose) {
+    cout << "number of indexes found    : " << pcsv.n_indexes << endl;
+    cout << "number of bytes per index : " << p.size() / double(pcsv.n_indexes) << endl;
   }
   double volume = iterations * p.size();
   double time_in_s = total / CLOCKS_PER_SEC;
