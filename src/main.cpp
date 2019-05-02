@@ -197,8 +197,8 @@ int main(int argc, char * argv[]) {
   int c; 
   bool verbose = false;
   bool dump = false;
-  int iterations = 10;
-  bool squash_counters = false; // unused.
+  size_t iterations = 100;
+  //bool squash_counters = false; // unused.
 
   while ((c = getopt(argc, argv, "vdi:s")) != -1){
     switch (c) {
@@ -212,7 +212,8 @@ int main(int argc, char * argv[]) {
       iterations = atoi(optarg);
       break;
     case 's':
-      squash_counters = true;
+      //squash_counters = true;
+      cerr << "unused parameter?" << endl;
       break;
     }
   }
@@ -260,7 +261,7 @@ int main(int argc, char * argv[]) {
   TimingAccumulator ta(2, evts);
 #endif // __linux__
   double total = 0; // naive accumulator
-  for (int i = 0; i < iterations; i++) {
+  for (size_t i = 0; i < iterations; i++) {
       clock_t start = clock(); // brutally portable
 #ifdef __linux__
       {TimingPhase p1(ta, 0);
