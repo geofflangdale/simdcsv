@@ -1,6 +1,7 @@
 #ifndef TIMING_H
 #define TIMING_H
 
+#ifdef __linux__
 #include <asm/unistd.h>       // for __NR_perf_event_open
 #include <linux/perf_event.h> // for perf event constants
 #include <sys/ioctl.h>        // for ioctl
@@ -119,5 +120,6 @@ public:
     acc.stop(phase_number);
   }
 };
+#endif // __linux__
 
 #endif

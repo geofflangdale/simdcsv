@@ -1,6 +1,8 @@
 #include <unistd.h> // for getopt
 
 #include <iostream>
+#include <vector>
+
 #include "common_defs.h"
 #include "csv_defs.h"
 #include "io_util.h"
@@ -125,7 +127,7 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
 bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
   // does the previous iteration end inside a double-quote pair?
   uint64_t prev_iter_inside_quote = 0ULL;  // either all zeros or all ones
-  uint64_t prev_iter_cr_end = 0ULL;
+  //uint64_t prev_iter_cr_end = 0ULL; 
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
   uint32_t *base_ptr = pcsv.indexes;
@@ -206,26 +208,40 @@ int main(int argc, char * argv[]) {
   if (verbose) {
     cout << "[verbose] loaded " << filename << " (" << p.size() << " bytes)" << endl;
   }
-
+#ifdef __linux__
   vector<int> evts;
   evts.push_back(PERF_COUNT_HW_CPU_CYCLES);
   evts.push_back(PERF_COUNT_HW_INSTRUCTIONS);
   evts.push_back(PERF_COUNT_HW_BRANCH_MISSES);
   evts.push_back(PERF_COUNT_HW_CACHE_REFERENCES);
   evts.push_back(PERF_COUNT_HW_CACHE_MISSES);
+#endif //__linux__
 
   ParsedCSV pcsv;
   pcsv.indexes = new (std::nothrow) uint32_t[p.size()]; // can't have more indexes than we have data
+  if(pcsv.indexes == nullptr) {
+    cerr << "You are running out of memory." << endl;
+    return EXIT_FAILURE;
+  }
 
+#ifdef __linux__
   TimingAccumulator ta(2, evts);
+#else
+  double total = 0; // naive accumulator
+#endif // __linux__
   for (int i = 0; i < iterations; i++) {
-    {
+#ifdef __linux__
       TimingPhase p1(ta, 0);
+#else
+      clock_t start = clock(); // brutally portable
+#endif // __linux__
       find_indexes(p.data(), p.size(), pcsv);
-    }
-    {
+
+#ifdef __linux__
       TimingPhase p2(ta, 1);
-    }
+#else
+       total += clock() - start; // brutally portable 
+#endif // __linux__
   }
 
   if (dump) {
@@ -239,9 +255,14 @@ int main(int argc, char * argv[]) {
       cout << "\n";
     }
   }
+#ifdef __linux__
   ta.dump();
-
   cout << "Cycles per byte " << (1.0*ta.results[0])/(iterations*p.size()) << "\n";
+#else
+  double volume = iterations*p.size() * iterations;
+  double time_in_s = total / CLOCKS_PER_SEC;
+  cout << " GB/s: " << volume / time_in_s / (1024 * 1024 * 1024) << endl;
+#endif
   if (verbose) {
     cout << "[verbose] done " << endl;
   }
