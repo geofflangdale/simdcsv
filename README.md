@@ -1,7 +1,7 @@
 # simdcsv
-A fast SIMD parser for CSV files as defined by RFC 4180.
+A fast SIMD parser for CSV files as defined by [RFC 4180](https://tools.ietf.org/html/rfc4180).
 
-This project will be a fast SIMD parser for CSV files. The approach will closely resemble https://github.com/lemire/simdjson in many respects; I plan to a number of similar tricks to the ones we did in that project. Initially, many techniques will be (regrettably) copy-pasted from that project; I hope to factor out some common functionality for this kind of code later.
+This project will be a fast SIMD parser for CSV files. The approach will closely resemble [simdjson](https://github.com/lemire/simdjson) in many respects; I plan to a number of similar tricks to the ones we did in that project. Initially, many techniques will be (regrettably) copy-pasted from that project; I hope to factor out some common functionality for this kind of code later.
 
 Real-life parsing of CSV files has to deal with a huge range of optional variations on what a CSV might look like. My plan is to initially focus on standards-compliant CSV files and potentially add some variations later.
 
@@ -32,5 +32,6 @@ Other tasks that need to happen:
 - UTF validation is not covered by RFC 4180 but will surely be a necessity.
 - Numbers that appear within fields will likely need to be converted to integer or floating point values
 - The escaped text will need to be converted (in situ or in newly allocated storage) into unescaped variants
+- It should be possible to parse only some columns, without incurring much of a price for skipping the other columns.
 
 The initial cut of the code will be for AVX2 capable machines. An ARM variant will appear shortly, as will AVX512 and possible SSE versions.
