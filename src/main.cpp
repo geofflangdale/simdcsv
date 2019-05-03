@@ -100,9 +100,9 @@ really_inline uint64_t find_quote_mask(simd_input in, uint64_t &prev_iter_inside
 // needs to be large enough to handle this
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
-  uint32_t cnt = hamming(bits);
-  uint32_t next_base = base + cnt;
-  while (bits != 0u) {
+  if (bits != 0u) {
+    uint32_t cnt = hamming(bits);
+    uint32_t next_base = base + cnt;
     base_ptr[base + 0] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
     base_ptr[base + 1] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
@@ -119,9 +119,34 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
     bits = bits & (bits - 1);
     base_ptr[base + 7] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base += 8;
+    if (cnt > 8) {
+      base_ptr[base + 8] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr[base + 9] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr[base + 10] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr[base + 11] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr[base + 12] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr[base + 13] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr[base + 14] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+      base_ptr[base + 15] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      bits = bits & (bits - 1);
+    }
+    if (cnt > 16) {
+      base += 16;
+      do {
+        base_ptr[base] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+        bits = bits & (bits - 1);
+        base++;
+      } while (bits != 0);
+    }
+    base = next_base;
   }
-  base = next_base;
 }
 
 //
@@ -202,7 +227,6 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
     // the quoted bits here. Some other quote convention would
     // need to be thought about carefully
       uint64_t field_sep = (end | sep) & ~quote_mask;
-
       flatten_bits(base_ptr, base, idx, field_sep);
   }
 #undef SIMDCSV_BUFFERSIZE
