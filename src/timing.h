@@ -1,6 +1,7 @@
 #ifndef TIMING_H
 #define TIMING_H
 
+#ifdef __linux__
 #include <asm/unistd.h>       // for __NR_perf_event_open
 #include <linux/perf_event.h> // for perf event constants
 #include <sys/ioctl.h>        // for ioctl
@@ -41,6 +42,7 @@ public:
 
     int group = -1; // no group
     num_events = config_vec.size();
+    ids.resize(config_vec.size());
     uint32_t i = 0;
     for (auto config : config_vec) {
       attribs.config = config;
@@ -83,7 +85,7 @@ public:
       report_error("ioctl(PERF_EVENT_IOC_DISABLE)");
     }
 
-    if (read(fd, &temp_result_vec[0], temp_result_vec.size() * 8) == -1) {
+    if (read(fd, temp_result_vec.data(), temp_result_vec.size() * 8) == -1) {
       report_error("read");
     }
     // our actual results are in slots 1,3,5, ... of this structure
@@ -119,5 +121,6 @@ public:
     acc.stop(phase_number);
   }
 };
+#endif // __linux__
 
 #endif
