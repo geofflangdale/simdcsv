@@ -103,46 +103,47 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
   if (bits != 0u) {
     uint32_t cnt = hamming(bits);
     uint32_t next_base = base + cnt;
-    base_ptr[base + 0] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr += base;
+    base_ptr[0] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[base + 1] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr[1] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[base + 2] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr[2] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[base + 3] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr[3] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[base + 4] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr[4] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[base + 5] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr[5] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[base + 6] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr[6] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
-    base_ptr[base + 7] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+    base_ptr[7] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
     bits = bits & (bits - 1);
     if (cnt > 8) {
-      base_ptr[base + 8] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[8] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr[base + 9] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[9] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr[base + 10] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[10] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr[base + 11] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[11] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr[base + 12] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[12] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr[base + 13] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[13] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr[base + 14] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[14] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
-      base_ptr[base + 15] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
+      base_ptr[15] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
       bits = bits & (bits - 1);
     }
     if (cnt > 16) {
-      base += 16;
+      base_ptr += 16;
       do {
         base_ptr[base] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
         bits = bits & (bits - 1);
-        base++;
+        base_ptr++;
       } while (bits != 0);
     }
     base = next_base;
