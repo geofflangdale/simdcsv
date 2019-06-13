@@ -37,6 +37,8 @@ Other tasks that need to happen:
 The initial cut of the code will be for AVX2 capable machines. An ARM variant will appear shortly, as will AVX512 and possible SSE versions.
 
 
-**References**
+## References
+
+Ge, Chang and Li, Yinan and Eilebrecht, Eric and Chandramouli, Badrish and Kossmann, Donald, [Speculative Distributed CSV Data Parsing for Big Data Analytics](https://www.microsoft.com/en-us/research/publication/speculative-distributed-csv-data-parsing-for-big-data-analytics/), SIGMOD 2019.
 
 Mühlbauer, T., Rödiger, W., Seilbeck, R., Reiser, A., Kemper, A., & Neumann, T. (2013). [Instant loading for main memory databases](https://pdfs.semanticscholar.org/a1b0/67fc941d6727169ec18a882080fa1f074595.pdf). Proceedings of the VLDB Endowment, 6(14), 1702-1713.
