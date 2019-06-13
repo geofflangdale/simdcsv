@@ -35,3 +35,8 @@ Other tasks that need to happen:
 - It should be possible to parse only some columns, without incurring much of a price for skipping the other columns.
 
 The initial cut of the code will be for AVX2 capable machines. An ARM variant will appear shortly, as will AVX512 and possible SSE versions.
+
+
+**References**
+
+Mühlbauer, T., Rödiger, W., Seilbeck, R., Reiser, A., Kemper, A., & Neumann, T. (2013). [Instant loading for main memory databases](https://pdfs.semanticscholar.org/a1b0/67fc941d6727169ec18a882080fa1f074595.pdf). Proceedings of the VLDB Endowment, 6(14), 1702-1713.
