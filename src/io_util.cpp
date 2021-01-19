@@ -29,7 +29,7 @@ std::basic_string_view<uint8_t> get_corpus(const std::string& filename, size_t p
       aligned_free(buf);
       throw  std::runtime_error("could not read the data");
     }
-    return std::basic_string_view<uint8_t>(buf,len);
+    return std::basic_string_view<uint8_t>(buf, len+padding);
   }
   throw  std::runtime_error("could not load corpus");
 }
