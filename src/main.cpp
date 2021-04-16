@@ -111,18 +111,20 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
      z(0)z(1)z(2)z(3)z(4)z(5)z(6)z(7)
 #else
      uint32_t i;
-     for(i = 0; i < 8; ++i)
+     for(i = 0; i < 8; ++i){
         z(i)
+     }
 #endif
     if (cnt > 8) {
 #ifndef SIMDCSV_NOUNROLL
       z(8)z(9)z(10)z(11)z(12)z(13)z(14)z(15)
 #else
-     for(i = 0; i < 8; ++i)
+     for(i = 0; i < 8; ++i){
         z(i+8)
+     }
 #endif
     }
-    if (cnt > 16) {
+    if (cnt > 16) { // this should never happen
       base += 16;
       do {
         z(0)
