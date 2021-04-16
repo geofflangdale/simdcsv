@@ -98,50 +98,32 @@ really_inline uint64_t find_quote_mask(simd_input in, uint64_t &prev_iter_inside
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
+#define NOUNROLL
+#define z(i) base_ptr[base + i] = static_cast<uint32_t>(idx) + trailingzeroes(bits); bits = bits & (bits - 1);
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
   if (bits != 0u) {
     uint32_t cnt = hamming(bits);
     uint32_t next_base = base + cnt;
-    base_ptr[base + 0] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 1] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 2] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 3] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 4] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 5] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 6] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 7] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
+#ifndef NOUNROLL
+     z(0)z(1)z(2)z(3)z(4)z(5)z(6)z(7)
+#else
+     uint32_t i;
+     for(i = 0; i < 8; ++i)
+        z(i)
+#endif
     if (cnt > 8) {
-      base_ptr[base + 8] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 9] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 10] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 11] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 12] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 13] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 14] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 15] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
+#ifndef NOUNROLL
+      z(8)z(9)z(10)z(11)z(12)z(13)z(14)z(15)
+#else
+     for(i = 0; i < 8; ++i)
+        z(i+8)
+#endif
     }
     if (cnt > 16) {
       base += 16;
       do {
-        base_ptr[base] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-        bits = bits & (bits - 1);
+        z(0)
         base++;
       } while (bits != 0);
     }
