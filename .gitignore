@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# CMake crud
+build
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+simdcsv
+Makefile

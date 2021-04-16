@@ -11,10 +11,13 @@
 #include "portability.h"
 using namespace std;
 
+#define SIMDCSV_DELIM     ','
+#define SIMDCSV_BUFFERSIZE 8 // seems to be about the sweetspot, lemire suggests 4
+#define SIMDCSV_NOUNROLL
 
 struct ParsedCSV {
   uint32_t n_indexes{0};
-  uint32_t *indexes; 
+  uint32_t *indexes;
 };
 
 struct simd_input {
@@ -27,7 +30,7 @@ struct simd_input {
   uint8x16_t i2;
   uint8x16_t i3;
 #else
-#error "It's called SIMDcsv for a reason, bro"
+#error "It's called simdcsv for a reason"
 #endif
 };
 
@@ -56,18 +59,18 @@ really_inline uint64_t cmp_mask_against_input(simd_input in, uint8_t m) {
   uint64_t res_1 = _mm256_movemask_epi8(cmp_res_1);
   return res_0 | (res_1 << 32);
 #elif defined(__ARM_NEON)
-  const uint8x16_t mask = vmovq_n_u8(m); 
-  uint8x16_t cmp_res_0 = vceqq_u8(in.i0, mask); 
-  uint8x16_t cmp_res_1 = vceqq_u8(in.i1, mask); 
-  uint8x16_t cmp_res_2 = vceqq_u8(in.i2, mask); 
-  uint8x16_t cmp_res_3 = vceqq_u8(in.i3, mask); 
+  const uint8x16_t mask = vmovq_n_u8(m);
+  uint8x16_t cmp_res_0 = vceqq_u8(in.i0, mask);
+  uint8x16_t cmp_res_1 = vceqq_u8(in.i1, mask);
+  uint8x16_t cmp_res_2 = vceqq_u8(in.i2, mask);
+  uint8x16_t cmp_res_3 = vceqq_u8(in.i3, mask);
   return neonmovemask_bulk(cmp_res_0, cmp_res_1, cmp_res_2, cmp_res_3);
 #endif
 }
 
 
 // return the quote mask (which is a half-open mask that covers the first
-// quote in a quote pair and everything in the quote pair) 
+// quote in a quote pair and everything in the quote pair)
 // We also update the prev_iter_inside_quote value to
 // tell the next iteration whether we finished the final iteration inside a
 // quote pair; if so, this  inverts our behavior of  whether we're inside
@@ -98,50 +101,33 @@ really_inline uint64_t find_quote_mask(simd_input in, uint64_t &prev_iter_inside
 // base_ptr[base] incrementing base as we go
 // will potentially store extra values beyond end of valid bits, so base_ptr
 // needs to be large enough to handle this
+#define z(i) base_ptr[base + i] = static_cast<uint32_t>(idx) + trailingzeroes(bits); bits = bits & (bits - 1);
 really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
                                 uint32_t idx, uint64_t bits) {
   if (bits != 0u) {
     uint32_t cnt = hamming(bits);
     uint32_t next_base = base + cnt;
-    base_ptr[base + 0] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 1] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 2] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 3] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 4] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 5] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 6] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
-    base_ptr[base + 7] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-    bits = bits & (bits - 1);
+#ifndef SIMDCSV_NOUNROLL
+     z(0)z(1)z(2)z(3)z(4)z(5)z(6)z(7)
+#else
+     uint32_t i;
+     for(i = 0; i < 8; ++i){
+        z(i)
+     }
+#endif
     if (cnt > 8) {
-      base_ptr[base + 8] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 9] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 10] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 11] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 12] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 13] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 14] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
-      base_ptr[base + 15] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-      bits = bits & (bits - 1);
+#ifndef SIMDCSV_NOUNROLL
+      z(8)z(9)z(10)z(11)z(12)z(13)z(14)z(15)
+#else
+     for(i = 0; i < 8; ++i){
+        z(i+8)
+     }
+#endif
     }
-    if (cnt > 16) {
+    if (cnt > 16) { // this should never happen
       base += 16;
       do {
-        base_ptr[base] = static_cast<uint32_t>(idx) + trailingzeroes(bits);
-        bits = bits & (bits - 1);
+        z(0)
         base++;
       } while (bits != 0);
     }
@@ -161,20 +147,18 @@ really_inline void flatten_bits(uint32_t *base_ptr, uint32_t &base,
 // GB/s: 5.29778
 // Explanation: It slightly reduces cache misses, but that's probably irrelevant,
 // However, it seems to improve drastically the number of instructions per cycle.
-#define SIMDCSV_BUFFERING 
 bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
   // does the previous iteration end inside a double-quote pair?
   uint64_t prev_iter_inside_quote = 0ULL;  // either all zeros or all ones
 #ifdef CRLF
-  uint64_t prev_iter_cr_end = 0ULL; 
+  uint64_t prev_iter_cr_end = 0ULL;
 #endif
   size_t lenminus64 = len < 64 ? 0 : len - 64;
   size_t idx = 0;
   uint32_t *base_ptr = pcsv.indexes;
   uint32_t base = 0;
-#ifdef SIMDCSV_BUFFERING
+#if SIMDCSV_BUFFERSIZE
   // we do the index decoding in bulk for better pipelining.
-#define SIMDCSV_BUFFERSIZE 4 // it seems to be about the sweetspot.
   if(lenminus64 > 64 * SIMDCSV_BUFFERSIZE) {
     uint64_t fields[SIMDCSV_BUFFERSIZE];
     for (; idx < lenminus64 - 64 * SIMDCSV_BUFFERSIZE + 1; idx += 64 * SIMDCSV_BUFFERSIZE) {
@@ -185,7 +169,7 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
 #endif
         simd_input in = fill_input(buf+internal_idx);
         uint64_t quote_mask = find_quote_mask(in, prev_iter_inside_quote);
-        uint64_t sep = cmp_mask_against_input(in, ',');
+        uint64_t sep = cmp_mask_against_input(in, SIMDCSV_DELIM);
 #ifdef CRLF
         uint64_t cr = cmp_mask_against_input(in, 0x0d);
         uint64_t cr_adjusted = (cr << 1) | prev_iter_cr_end;
@@ -204,14 +188,14 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
     }
   }
   // tail end will be unbuffered
-#endif // SIMDCSV_BUFFERING
+#endif // SIMDCSV_BUFFERSIZE
   for (; idx < lenminus64; idx += 64) {
 #ifndef _MSC_VER
       __builtin_prefetch(buf + idx + 128);
 #endif
       simd_input in = fill_input(buf+idx);
       uint64_t quote_mask = find_quote_mask(in, prev_iter_inside_quote);
-      uint64_t sep = cmp_mask_against_input(in, ',');
+      uint64_t sep = cmp_mask_against_input(in, SIMDCSV_DELIM);
 #ifdef CRLF
       uint64_t cr = cmp_mask_against_input(in, 0x0d);
       uint64_t cr_adjusted = (cr << 1) | prev_iter_cr_end;
@@ -229,13 +213,12 @@ bool find_indexes(const uint8_t * buf, size_t len, ParsedCSV & pcsv) {
       uint64_t field_sep = (end | sep) & ~quote_mask;
       flatten_bits(base_ptr, base, idx, field_sep);
   }
-#undef SIMDCSV_BUFFERSIZE
   pcsv.n_indexes = base;
   return true;
 }
 
 int main(int argc, char * argv[]) {
-  int c; 
+  int c;
   bool verbose = false;
   bool dump = false;
   size_t iterations = 100;
@@ -311,7 +294,7 @@ int main(int argc, char * argv[]) {
 #ifdef __linux__
       }{TimingPhase p2(ta, 1);} // the scoping business is an instance of C++ extreme programming
 #endif // __linux__
-      total += clock() - start; // brutally portable 
+      total += clock() - start; // brutally portable
   }
 
   if (dump) {
@@ -324,7 +307,7 @@ int main(int argc, char * argv[]) {
       }
       cout << "\n";
     }
-  } 
+  }
   if(verbose) {
     cout << "number of indexes found    : " << pcsv.n_indexes << endl;
     cout << "number of bytes per index : " << p.size() / double(pcsv.n_indexes) << endl;
@@ -350,8 +333,8 @@ int main(int argc, char * argv[]) {
     cout << "Number of cache references per b.  = " << ta.results[3] / volume << endl;
     cout << "Number of cache misses             = " << ta.results[4] << endl;
     cout << "Number of cache misses per byte    = " << ta.results[4] / volume << endl;
-    cout << "CPU freq (effective)               = " << ta.results[0] / time_in_s / (1000 * 1000 * 1000) << endl; 
-    cout << "CPU freq (base)                    = " << ta.results[5] / time_in_s / (1000 * 1000 * 1000) << endl; 
+    cout << "CPU freq (effective)               = " << ta.results[0] / time_in_s / (1000 * 1000 * 1000) << endl;
+    cout << "CPU freq (base)                    = " << ta.results[5] / time_in_s / (1000 * 1000 * 1000) << endl;
    } else {
     ta.dump();
   }
