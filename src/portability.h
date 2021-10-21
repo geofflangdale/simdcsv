@@ -40,6 +40,18 @@ static inline int hamming(uint64_t input_num) {
 #include <cstdint>
 #include <cstdlib>
 
+#ifdef __ARM_NEON
+#include <arm_neon.h>
+
+uint64_t neonmovemask_bulk(uint8x16_t p0, uint8x16_t p1, uint8x16_t p2, uint8x16_t p3) {
+	uint8x16_t t0 = vbslq_u8(vdupq_n_u8(0x55), p0, p1);
+	uint8x16_t t1 = vbslq_u8(vdupq_n_u8(0x55), p2, p3);
+	uint8x16_t combined = vbslq_u8(vdupq_n_u8(0x33), t0, t1);
+	int8x8_t sum = vshrn_n_s16(vreinterpretq_s16_u8(combined), 4);
+	return vget_lane_u64(vreinterpret_u64_s8(sum), 0);
+}
+#endif
+
 #if defined(__BMI2__) || defined(__POPCOUNT__) || defined(__AVX2__)
 #include <x86intrin.h>
 #endif
