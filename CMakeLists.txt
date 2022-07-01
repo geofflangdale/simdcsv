@@ -1,5 +1,4 @@
-
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.9)
 
 project(simdcsv)
 
@@ -13,12 +12,20 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 include_directories("${PROJECT_SOURCE_DIR}/src")
 #include_directories("${PROJECT_SOURCE_DIR}/thirdparty")
 
-file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/src/*.cpp")
+file(GLOB SOURCES "src/*.cpp")
 
-set(CMAKE_CXX_FLAGS                  "-std=c++17 -march=native -Wall -Wextra")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+if (NOT MSVC)
+add_compile_options(-march=native -Wall -Wextra)
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO   "-O3 -g")
 set(CMAKE_CXX_FLAGS_RELEASE          "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG            "-DDEBUG -O0 -g")
+else()
+add_compile_options(-arch:AVX2)
+endif()
 
 # evidently useful:
 macro(append var string)
