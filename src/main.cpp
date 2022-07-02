@@ -1,4 +1,9 @@
+#ifndef _MSC_VER 
 #include <unistd.h> // for getopt
+#else
+#include "getopt.h"
+#endif
+
 
 #include <iostream>
 #include <vector>
@@ -274,7 +279,7 @@ int main(int argc, char * argv[]) {
   std::basic_string_view<uint8_t> p;
   try {
     p = get_corpus(filename, CSV_PADDING);
-  } catch (const std::exception &e) { // caught by reference to base
+  } catch (const std::exception &) { // caught by reference to base
     std::cout << "Could not load the file " << filename << std::endl;
     return EXIT_FAILURE;
   }

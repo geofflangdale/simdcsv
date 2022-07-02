@@ -22,17 +22,17 @@
 #ifdef _MSC_VER
 
 
-#define really_inline inline
-#define never_inline __declspec(noinline)
+#define really_inline    //let the compiler decide
+#define never_inline    //let the compiler decide
 
 #define UNUSED
 #define WARN_UNUSED
 
 #ifndef likely
-#define likely(x) x
+#define likely(x) x [[likely]]
 #endif
 #ifndef unlikely
-#define unlikely(x) x
+#define unlikely(x) x [[unlikely]]
 #endif
 
 #else
